@@ -14,7 +14,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Random;
 
 /**
@@ -225,7 +224,7 @@ public class Generator {
   }
 
   public static abstract class RuntimeSystem {
-    private Random rand = new Random();
+    private TopTailAnalyzer analyzer = new TopTailAnalyzer();
 
     public abstract void read(double t, int blockSize) throws IOException;
 
@@ -243,57 +242,12 @@ public class Generator {
 
     public abstract void sleep(double delay) throws InterruptedException;
 
-    // each of these keeps the top 1000 samples from all, 1% or 0.01% of the data.
-    // this allows us to compute high percentiles reasonably accurately
-    PriorityQueue<Double> p1 = new PriorityQueue<Double>();
-    PriorityQueue<Double> p2 = new PriorityQueue<Double>();
-    PriorityQueue<Double> p3 = new PriorityQueue<Double>();
-    int samples;
-    public void recordLatency(double delta) {
-      double u = rand.nextDouble();
-      samples++;
-      stash(u, 1, p1, delta);
-      stash(u, 0.01, p2, delta);
-      stash(u, 1e-4, p3, delta);
+    public final void recordLatency(double delta) {
+      analyzer.add(delta);
     }
 
-    public double percentile(int nines) {
-      double p = Math.pow(0.1, nines);
-      double n = p * samples;
-      if (n > 1000) {
-        n = p * samples * 0.01;
-        if (n > 1000) {
-          n = p * samples * 0.0001;
-          if (n > 1000) {
-            throw new UnsupportedOperationException(String.format("Can't get the 1-%f quantile from %d samples", p, samples));
-          } else {
-            return nthBest(n, p3);
-          }
-        } else {
-          return nthBest(n, p2);
-        }
-      } else {
-        return nthBest(n, p1);
-      }
-    }
-
-    private double nthBest(double n, PriorityQueue<Double> queue) {
-      List<Double> tmp = Lists.newArrayList();
-      for (Double x : queue) {
-        tmp.add(x);
-      }
-      return tmp.get((int) (tmp.size() - n));
-    }
-
-    private void stash(double u, double p, PriorityQueue<Double> queue, double delta) {
-      if (u <= p) {
-        if (queue.size() < 1000 || delta > queue.peek()) {
-          queue.add(delta);
-          while (queue.size() > 1000) {
-            queue.poll();
-          }
-        }
-      }
+    public final double quantiles(int nines) {
+      return analyzer.quantile(nines);
     }
   }
 }

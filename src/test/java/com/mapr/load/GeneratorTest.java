@@ -170,7 +170,7 @@ public class GeneratorTest {
       writes = 0;
       segmentStart = currentTime();
       bytesWritten = 0;
-      System.out.printf("%.3f %.3f %.3f %.3f\n", super.percentile(2), super.percentile(3), super.percentile(4), super.percentile(5));
+      System.out.printf("%.3f %.3f %.3f %.3f\n", super.quantiles(2), super.quantiles(3), super.quantiles(4), super.quantiles(5));
     }
 
     @Override
