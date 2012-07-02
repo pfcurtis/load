@@ -33,8 +33,6 @@ public class Generator {
 
   private int blockSize;
 
-  private double t0;
-
   /**
    * Generate events for the entire trace at rates specified in the trace.
    *
@@ -56,7 +54,7 @@ public class Generator {
    * @throws InterruptedException If a timer is aborted.
    */
   public void generate(double offset, double duration, double scale, RuntimeSystem actor) throws InterruptedException, IOException {
-    t0 = actor.currentTime();
+    double t0 = actor.currentTime();
     double t = t0;
     for (LoadSegment segment : trace) {
       if (t + segment.getSegmentDuration() < offset) {
@@ -131,7 +129,7 @@ public class Generator {
       public Splitter onTabs = Splitter.on("\t").trimResults().omitEmptyStrings();
       public DateFormat df = new SimpleDateFormat("M/d H:m:s");
       public List<LoadSegment> trace = Lists.newArrayList();
-      double t0 = 0;
+      double t0 = -1;
       double reads = 0;
       double writes = 0;
       boolean header = true;
@@ -143,7 +141,7 @@ public class Generator {
           final String dateString = i.next();
           try {
             double t = df.parse(dateString).getTime()/1e3;
-            if (t0 != 0) {
+            if (t0 != -1) {
               trace.add(new LoadSegment(reads, writes, t - t0));
             }
             t0 = t;
@@ -248,6 +246,10 @@ public class Generator {
 
     public final double quantiles(int nines) {
       return analyzer.quantile(nines);
+    }
+
+    public final long latencySamples() {
+      return analyzer.size();
     }
   }
 }

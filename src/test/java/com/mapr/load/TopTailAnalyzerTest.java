@@ -16,10 +16,14 @@ public class TopTailAnalyzerTest {
       foo.add(gen.nextDouble());
     }
 
-    assertEquals(0.99, foo.quantile(2), 0.01);
-    assertEquals(0.999, foo.quantile(3), 0.002);
-    assertEquals(0.9999, foo.quantile(4), 0.0001);
-    assertEquals(0.99999, foo.quantile(5), 0.00001);
-    assertEquals(0.999999, foo.quantile(6), 0.000001);
+    double p = 0.01;
+    for (int i = 2; i < 6; i++) {
+      final double q = foo.quantile(i);
+      final double relativeError = (1 - q) / p - 1;
+      System.out.printf("%d\t%.3f\n", i, relativeError);
+      assertEquals(String.format("quantile(%f) was 1-%f, relative error", 1 - p, 1 - q),
+        0, relativeError, 0.4);
+      p /= 10;
+    }
   }
 }

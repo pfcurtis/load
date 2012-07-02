@@ -18,10 +18,6 @@ import java.util.Random;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-/**
- * Created with IntelliJ IDEA. User: tdunning Date: 6/29/12 Time: 7:39 PM To change this template
- * use File | Settings | File Templates.
- */
 public class GeneratorTest {
   enum Kind {
     START, END, READ, WRITE
@@ -170,7 +166,9 @@ public class GeneratorTest {
       writes = 0;
       segmentStart = currentTime();
       bytesWritten = 0;
-      System.out.printf("%.3f %.3f %.3f %.3f\n", super.quantiles(2), super.quantiles(3), super.quantiles(4), super.quantiles(5));
+      if (latencySamples() > 100) {
+        System.out.printf("%.3f %.3f %.3f %.3f\n", quantiles(2), quantiles(3), quantiles(4), quantiles(5));
+      }
     }
 
     @Override

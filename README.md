@@ -13,6 +13,9 @@ The primary command line entry point (com.mapr.load.Load) accepts a list of file
 on the command line.
 
 DONE Test high percentile statistic stuff
+
+TODO Provide some scheme for resetting stats after warmup.  Perhaps reset at beginning of each trace
+TODO Make random access read support power law read patterns to help evaluating caching performance
 TODO Build random access and linear reader and write actors that delegate unhandled operations.
 TODO Build base class for actor delegation that records segment boundaries.
 TODO Build multi-threaded generator based on the ability to pass a scale factor to generators.

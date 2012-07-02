@@ -1,34 +1,62 @@
 package com.mapr.load;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.TreeSet;
 
 /**
- * Analyzes samples to determine the characteristics of the top distribution tail.
+ * Analyzes samples to determine the characteristics of the top tail of the distribution.
  */
 public class TopTailAnalyzer {
-  private Random rand = new Random();
+  private final Random rand = new Random();
 
-  // each of these keeps the top 1000 samples from all, 1% or 0.01% of the data.
-  // this allows us to compute high percentiles reasonably accurately with even
-  // as much as a billion samples.
-  PriorityQueue<Double> p1 = new PriorityQueue<Double>();
-  PriorityQueue<Double> p2 = new PriorityQueue<Double>();
-  PriorityQueue<Double> p3 = new PriorityQueue<Double>();
-  int samples;
+  // each of these keeps the top 1000 samples from all, or a sample of the data.
+  // this allows us to compute high percentiles reasonably accurately with only
+  // logarithmic storage.  The number of samples we need to keep is roughly
+  // ceiling(log_10(n)) * 1000
+
+  private final List<TreeSet<Double>> data = Lists.newArrayList();
+  private long samples;
+
+  public TopTailAnalyzer() {
+    final TreeSet<Double> set = Sets.newTreeSet();
+    data.add(set);
+  }
 
   public void add(double delta) {
-    double u = rand.nextDouble();
     samples++;
-    stash(u, 1, p1, delta);
-    stash(u, 0.01, p2, delta);
-    stash(u, 1e-4, p3, delta);
+
+    // add to each of the samples with progressively lower probability.
+    // we use a loop based on index so we can add new elements to data in the loop.
+    for (int i = 0; i < data.size(); i++) {
+      // add to this sample and trim to top 1000
+      final TreeSet<Double> x = data.get(i);
+      if (x.size() < 1000 || delta > x.first()) {
+        x.add(delta + rand.nextDouble() * 1e-12);
+        if (x.size() > 1000) {
+          x.remove(x.first());
+        }
+      }
+
+      // with probability 0.1, add to the next sample
+      final double u = rand.nextDouble();
+      if (u <= 0.1) {
+        // oh... that sample may not be there yet
+        if (i == data.size() - 1) {
+          final TreeSet<Double> set = Sets.newTreeSet();
+          data.add(set);
+        }
+      } else {
+        // if we didn't make the cut, we leave
+        break;
+      }
+    }
   }
 
   /**
@@ -37,43 +65,33 @@ public class TopTailAnalyzer {
    * @return  The desired quantile.
    */
   public double quantile(int nines) {
-    Preconditions.checkArgument(nines > 1, "This summarizer doesn't make sense for smaller quantiles");
-    Preconditions.checkState(samples > 10, "Should have lots of samples before asking for a high quantile");
+    return quantile(1 - Math.pow(0.1, nines));
+  }
 
-    double p = Math.pow(0.1, nines);
-    double n = p * samples;
-    if (n > 1000) {
-      n = p * samples * 0.01;
-      if (n > 1000) {
-        n = p * samples * 0.0001;
-        if (n > 1000) {
-          throw new UnsupportedOperationException(String.format("Can't get the 1-%f quantile from %d samples", p, samples));
-        } else {
-          return nthBest(n, p3);
-        }
-      } else {
-        return nthBest(n, p2);
-      }
-    } else {
-      return nthBest(n, p1);
+  /**
+   * Analyzes the data seen so far and returns the requested quantile.  If the (1-p) quantile
+   * is requested, then the returned result should be between the (1-3p/2) and the (1-p/2) quantiles
+   * with high probability and will often be between the (1-11p/10) and (1-9p/10) quantiles.
+   * @param q  the desired quantile.
+   * @return The desired quantile
+   */
+  public double quantile(double q) {
+    Preconditions.checkArgument(q >= 0.99, "This summarizer only works on high quantiles");
+    Preconditions.checkState(samples > 100, "Should have lots of samples before asking for a high quantile");
+
+    // find the first usable set
+    Iterator<TreeSet<Double>> i = data.iterator();
+    double n = (1 - q) * samples;
+    TreeSet<Double> x = i.next();
+    while (n >= x.size()) {
+      n /= 10;
+      x = i.next();
     }
+    // then estimate the quantile from that set
+    return Iterables.get(x.descendingSet(), (int) n);
   }
 
-  private double nthBest(double n, PriorityQueue<Double> queue) {
-    List<Double> tmp = Lists.newArrayList(queue);
-    Collections.sort(tmp, Ordering.natural().reverse());
-    return tmp.get((int) n);
+  public long size() {
+    return samples;
   }
-
-  private void stash(double u, double p, PriorityQueue<Double> queue, double delta) {
-    if (u <= p) {
-      if (queue.size() < 1000 || delta > queue.peek()) {
-        queue.add(delta);
-        while (queue.size() > 1000) {
-          queue.poll();
-        }
-      }
-    }
-  }
-
 }
