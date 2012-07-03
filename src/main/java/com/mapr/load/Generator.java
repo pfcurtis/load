@@ -38,7 +38,7 @@ public class Generator {
    *
    * @param actor    Where to send the events.
    */
-  public void generate(RuntimeSystem actor) throws InterruptedException, IOException {
+  public void generate(BaseFiler actor) throws InterruptedException, IOException {
     generate(0, totalLength, 1, actor);
   }
 
@@ -53,7 +53,7 @@ public class Generator {
    * @param actor    Where to send the events.
    * @throws InterruptedException If a timer is aborted.
    */
-  public void generate(double offset, double duration, double scale, RuntimeSystem actor) throws InterruptedException, IOException {
+  public void generate(double offset, double duration, double scale, BaseFiler actor) throws InterruptedException, IOException {
     double t0 = actor.currentTime();
     double t = t0;
     for (LoadSegment segment : trace) {
@@ -74,7 +74,7 @@ public class Generator {
     }
   }
 
-  private double generateSegment(double t, double end, double readRate, double writeRate, RuntimeSystem actor) throws InterruptedException, IOException {
+  private double generateSegment(double t, double end, double readRate, double writeRate, BaseFiler actor) throws InterruptedException, IOException {
     // total event rate
     final double rate = readRate + writeRate;
     // what portion are reads?
@@ -221,35 +221,4 @@ public class Generator {
     }
   }
 
-  public static abstract class RuntimeSystem {
-    private TopTailAnalyzer analyzer = new TopTailAnalyzer();
-
-    public abstract void read(double t, int blockSize) throws IOException;
-
-    public abstract void write(double t, int blockSize) throws IOException;
-
-    public void segmentEnd(double t) {
-      // ignore
-    }
-
-    public void segmentStart(double t) {
-      // ignore
-    }
-
-    public abstract double currentTime();
-
-    public abstract void sleep(double delay) throws InterruptedException;
-
-    public final void recordLatency(double delta) {
-      analyzer.add(delta);
-    }
-
-    public final double quantiles(int nines) {
-      return analyzer.quantile(nines);
-    }
-
-    public final long latencySamples() {
-      return analyzer.size();
-    }
-  }
 }

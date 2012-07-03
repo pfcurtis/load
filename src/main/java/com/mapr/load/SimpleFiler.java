@@ -12,7 +12,7 @@ import java.util.Random;
 /**
 * Simple file access that does appending writes and random reads.
 */
-class SimpleFiler extends Generator.RuntimeSystem {
+class SimpleFiler extends BaseFiler {
   private OutputStream os;
   private Random rand = new Random();
 
@@ -42,7 +42,8 @@ class SimpleFiler extends Generator.RuntimeSystem {
 
   @Override
   public void segmentEnd(double t) {
-    System.out.printf("%.3f end (writes = %d, %.2f/s, %.1f MB/s\n", t - t0, writes, writes / (t - segmentStart), bytesWritten / (t - segmentStart) / 1e6);
+    System.out.printf("%.3f end (writes = %d, %.2f/s, %.1f MB/s\n",
+      t - t0, writes, writes / (t - segmentStart), bytesWritten / (t - segmentStart) / 1e6);
   }
 
   @Override
@@ -54,8 +55,7 @@ class SimpleFiler extends Generator.RuntimeSystem {
 
   @Override
   public void sleep(double delay) throws InterruptedException {
-    final long sleepTime = (long) (delay * 1e3);
-    Thread.sleep(sleepTime);
+    Thread.sleep((long) (delay * 1e3));
   }
 
 

@@ -22,23 +22,24 @@ public class TopTailAnalyzer {
   // ceiling(log_10(n)) * 1000
 
   private final List<TreeSet<Double>> data = Lists.newArrayList();
+  private double mean;
   private long samples;
 
   public TopTailAnalyzer() {
-    final TreeSet<Double> set = Sets.newTreeSet();
-    data.add(set);
+    reset();
   }
 
-  public void add(double delta) {
+  public void add(double latency) {
     samples++;
+    mean = (latency - mean) / samples;
 
     // add to each of the samples with progressively lower probability.
     // we use a loop based on index so we can add new elements to data in the loop.
     for (int i = 0; i < data.size(); i++) {
       // add to this sample and trim to top 1000
       final TreeSet<Double> x = data.get(i);
-      if (x.size() < 1000 || delta > x.first()) {
-        x.add(delta + rand.nextDouble() * 1e-12);
+      if (x.size() < 1000 || latency > x.first()) {
+        x.add(latency + rand.nextDouble() * 1e-12);
         if (x.size() > 1000) {
           x.remove(x.first());
         }
@@ -49,8 +50,7 @@ public class TopTailAnalyzer {
       if (u <= 0.1) {
         // oh... that sample may not be there yet
         if (i == data.size() - 1) {
-          final TreeSet<Double> set = Sets.newTreeSet();
-          data.add(set);
+          addSampleTier();
         }
       } else {
         // if we didn't make the cut, we leave
@@ -60,19 +60,38 @@ public class TopTailAnalyzer {
   }
 
   /**
+   * Resets all stats to zero.
+   */
+  public void reset() {
+    samples = 0;
+    mean = 0;
+    data.clear();
+    addSampleTier();
+  }
+
+  /**
+   * Returns the mean latency.
+   */
+  public double mean() {
+    return mean;
+  }
+
+  /**
    * Analyzes the data seen so far and returns the (1-10^-nines) quantile.
-   * @param nines    The number of 9's in the quantile desired.  That is 3 for the 99.9th %-ile.
-   * @return  The desired quantile.
+   *
+   * @param nines The number of 9's in the quantile desired.  That is 3 for the 99.9th %-ile.
+   * @return The desired quantile.
    */
   public double quantile(int nines) {
     return quantile(1 - Math.pow(0.1, nines));
   }
 
   /**
-   * Analyzes the data seen so far and returns the requested quantile.  If the (1-p) quantile
-   * is requested, then the returned result should be between the (1-3p/2) and the (1-p/2) quantiles
+   * Analyzes the data seen so far and returns the requested quantile.  If the (1-p) quantile is
+   * requested, then the returned result should be between the (1-3p/2) and the (1-p/2) quantiles
    * with high probability and will often be between the (1-11p/10) and (1-9p/10) quantiles.
-   * @param q  the desired quantile.
+   *
+   * @param q the desired quantile.
    * @return The desired quantile
    */
   public double quantile(double q) {
@@ -93,5 +112,10 @@ public class TopTailAnalyzer {
 
   public long size() {
     return samples;
+  }
+
+  private void addSampleTier() {
+    final TreeSet<Double> set = Sets.newTreeSet();
+    data.add(set);
   }
 }

@@ -134,7 +134,7 @@ public class GeneratorTest {
     g.generate(new Appender());
   }
 
-  private class Appender extends Generator.RuntimeSystem {
+  private class Appender extends BaseFiler {
     private OutputStream os;
     private Random rand = new Random();
 
@@ -163,12 +163,12 @@ public class GeneratorTest {
     @Override
     public void segmentEnd(double t) {
       System.out.printf("%.3f end (writes = %d, %.2f/s, %.1f MB/s\n", t - t0, writes, writes / (currentTime() - segmentStart), bytesWritten / (currentTime() - segmentStart) / 1e6);
+      if (latencySamples(Op.WRITE) > 100) {
+        System.out.printf("%10d %.3f %.3f %.3f %.3f\n", writes, quantiles(Op.WRITE, 2), quantiles(Op.WRITE, 3), quantiles(Op.WRITE, 4), quantiles(Op.WRITE, 5));
+      }
       writes = 0;
       segmentStart = currentTime();
       bytesWritten = 0;
-      if (latencySamples() > 100) {
-        System.out.printf("%.3f %.3f %.3f %.3f\n", quantiles(2), quantiles(3), quantiles(4), quantiles(5));
-      }
     }
 
     @Override
@@ -197,11 +197,11 @@ public class GeneratorTest {
       os.write(buf);
       os.flush();
       double t1 = currentTime();
-      super.recordLatency(t1 - t0);
+      super.recordLatency(Op.WRITE, t1 - t0);
     }
   }
 
-  private class Recorder extends Generator.RuntimeSystem {
+  private class Recorder extends BaseFiler {
     private static final double EPOCH = 12345.34;
 
     private double t = EPOCH;
