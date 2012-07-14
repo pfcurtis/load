@@ -5,6 +5,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 import com.google.common.io.Files;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
@@ -122,6 +123,7 @@ public class GeneratorTest {
 
   @Test
   public void testRealIo() throws IOException, InterruptedException {
+    Assume.assumeNotNull(System.getProperty("slowTests"));
     Generator g = new Generator();
     List<Generator.LoadSegment> trace = Lists.newArrayList();
     for (int i = 0; i < 50; i++) {
@@ -197,7 +199,7 @@ public class GeneratorTest {
       os.write(buf);
       os.flush();
       double t1 = currentTime();
-      super.recordLatency(Op.WRITE, t1 - t0);
+      super.recordLatency(Op.WRITE, t1 - t0, blockSize);
     }
   }
 

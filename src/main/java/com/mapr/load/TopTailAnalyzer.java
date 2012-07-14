@@ -22,16 +22,21 @@ public class TopTailAnalyzer {
   // ceiling(log_10(n)) * 1000
 
   private final List<TreeSet<Double>> data = Lists.newArrayList();
-  private double mean;
+  private double meanLatency;
+  private double totalBytes;
+  private double totalBlocks;
   private long samples;
+  private double t0;
 
   public TopTailAnalyzer() {
-    reset();
+    reset(0);
   }
 
-  public void add(double latency) {
+  public void add(double latency, double bytes) {
     samples++;
-    mean = (latency - mean) / samples;
+    meanLatency += (latency - meanLatency) / samples;
+    totalBytes += bytes;
+    totalBlocks += 1;
 
     // add to each of the samples with progressively lower probability.
     // we use a loop based on index so we can add new elements to data in the loop.
@@ -61,10 +66,12 @@ public class TopTailAnalyzer {
 
   /**
    * Resets all stats to zero.
+   * @param t  Current time
    */
-  public void reset() {
+  public void reset(double t) {
+    t0 = t;
     samples = 0;
-    mean = 0;
+    meanLatency = 0;
     data.clear();
     addSampleTier();
   }
@@ -72,8 +79,20 @@ public class TopTailAnalyzer {
   /**
    * Returns the mean latency.
    */
-  public double mean() {
-    return mean;
+  public double meanLatency() {
+    return meanLatency;
+  }
+
+  public double meanBytesPerSecond(double t) {
+    return totalBytes / (t - t0);
+  }
+
+  public double meanBlocksPerSecond(double t) {
+    return totalBlocks / (t - t0);
+  }
+
+  public double totalBytes() {
+    return totalBytes;
   }
 
   /**
@@ -117,5 +136,9 @@ public class TopTailAnalyzer {
   private void addSampleTier() {
     final TreeSet<Double> set = Sets.newTreeSet();
     data.add(set);
+  }
+
+  public double totalBlocks() {
+    return totalBlocks;
   }
 }

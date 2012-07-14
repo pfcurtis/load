@@ -1,33 +1,22 @@
 package com.mapr.load;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Random;
 
 public class Load {
   public static void main(String[] args) throws IOException, InterruptedException {
     Generator g = new Generator();
-    for (String trace : args) {
-      g.addTrace(Generator.readTraceFile(new File(trace)));
-    }
-
     g.setBlockSize(4096);
 
-    File readFile = new File("read-file.goo");
-    OutputStream os = new FileOutputStream(readFile);
-    Random rand = new Random();
-    byte[] buf = new byte[4096];
-    for (int i = 0; i < 1e9 / 4096; i++) {
-      rand.nextBytes(buf);
-      os.write(buf);
+    File file = new File("file.goo");
+    file.deleteOnExit();
+
+    final Filer actor = RandomFiler.create(file, 1000000, 1, 1);
+
+    for (String trace : args) {
+      actor.reset(actor.currentTime());
+      g.addTrace(Generator.readTraceFile(new File(trace)));
+      g.generate(actor);
     }
-    os.close();
-
-    final SimpleFiler actor = new SimpleFiler();
-    actor.setReadFile(readFile);
-    g.generate(actor);
   }
-
 }

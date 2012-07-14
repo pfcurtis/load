@@ -12,7 +12,7 @@ import java.util.Random;
 /**
 * Simple file access that does appending writes and random reads.
 */
-class SimpleFiler extends BaseFiler {
+class SimpleFiler extends RealTimeFiler {
   private OutputStream os;
   private Random rand = new Random();
 
@@ -25,6 +25,7 @@ class SimpleFiler extends BaseFiler {
   private double t0 = this.currentTime();
 
   SimpleFiler() throws IOException {
+    super(1);
     File outputFile = File.createTempFile("foo-", ".goo");
     outputFile.deleteOnExit();
     os = new FileOutputStream(outputFile);
@@ -34,30 +35,6 @@ class SimpleFiler extends BaseFiler {
   public void setReadFile(File f) throws IOException {
     raf = new FileInputStream(f).getChannel();
   }
-
-  @Override
-  public double currentTime() {
-    return System.nanoTime() / 1e9;
-  }
-
-  @Override
-  public void segmentEnd(double t) {
-    System.out.printf("%.3f end (writes = %d, %.2f/s, %.1f MB/s\n",
-      t - t0, writes, writes / (t - segmentStart), bytesWritten / (t - segmentStart) / 1e6);
-  }
-
-  @Override
-  public void segmentStart(double t) {
-    System.out.printf("%.3f start\n", t - t0);
-    writes = 0;
-    segmentStart = t;
-  }
-
-  @Override
-  public void sleep(double delay) throws InterruptedException {
-    Thread.sleep((long) (delay * 1e3));
-  }
-
 
   @Override
   public void read(double t, int blockSize) throws IOException {
@@ -76,7 +53,10 @@ class SimpleFiler extends BaseFiler {
     }
     writes++;
     bytesWritten += blockSize;
+    double t0 = currentTime();
     os.write(buf);
     os.flush();
+    double t1 = currentTime();
+    recordLatency(Op.WRITE, t1 - t0, blockSize);
   }
 }

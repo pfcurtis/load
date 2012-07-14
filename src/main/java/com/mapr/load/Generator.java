@@ -38,7 +38,7 @@ public class Generator {
    *
    * @param actor    Where to send the events.
    */
-  public void generate(BaseFiler actor) throws InterruptedException, IOException {
+  public void generate(Filer actor) throws InterruptedException, IOException {
     generate(0, totalLength, 1, actor);
   }
 
@@ -53,7 +53,7 @@ public class Generator {
    * @param actor    Where to send the events.
    * @throws InterruptedException If a timer is aborted.
    */
-  public void generate(double offset, double duration, double scale, BaseFiler actor) throws InterruptedException, IOException {
+  public void generate(double offset, double duration, double scale, Filer actor) throws InterruptedException, IOException {
     double t0 = actor.currentTime();
     double t = t0;
     for (LoadSegment segment : trace) {
@@ -74,7 +74,8 @@ public class Generator {
     }
   }
 
-  private double generateSegment(double t, double end, double readRate, double writeRate, BaseFiler actor) throws InterruptedException, IOException {
+  private int messageCount = 0;
+  private double generateSegment(double t, double end, double readRate, double writeRate, Filer actor) throws InterruptedException, IOException {
     // total event rate
     final double rate = readRate + writeRate;
     // what portion are reads?
@@ -85,11 +86,21 @@ public class Generator {
     while (t < end) {
       // only really sleep if there is a millisecond or more to sleep
       final double t1 = actor.currentTime();
-      if (t - t1 > 1e-3) {
+      boolean slept = false;
+      if (t - t1 > 20e-3) {
         actor.sleep(t - t1);
+        slept = true;
+      }
+      if (actor.currentTime() > t + 0.1 && slept) {
+        System.out.printf("Whacky waits\n");
+      }
+      messageCount++;
+      if (actor.currentTime() > t + 0.1 && messageCount%100 == 0) {
+        System.out.printf("Slippage %.2f\n", actor.currentTime() - t);
       }
 
       if (actor.currentTime() > t + 5) {
+        actor.segmentEnd(t);
         throw new IOException("Generator fell more than 5 seconds behind ... aborting run");
       }
 

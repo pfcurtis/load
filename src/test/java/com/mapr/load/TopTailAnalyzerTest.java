@@ -13,7 +13,7 @@ public class TopTailAnalyzerTest {
     Random gen = new Random();
     // quantiles of a uniform distribution are easy to compute
     for (int i = 0; i < 10000000; i++) {
-      foo.add(gen.nextDouble());
+      foo.add(gen.nextDouble(), gen.nextDouble()*100);
     }
 
     double p = 0.01;
