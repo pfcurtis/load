@@ -21,5 +21,19 @@ package com.mapr;
  * are determined by this because the reads in (5) are determined by the volume
  * of writes in (4).
  */
+
+import com.mapr.load.*;
+import java.io.File;
+import java.io.IOException;
+
 public class CustomerLoad {
+
+   private static int numberOfThreads = 1;
+
+   public static void main(String[] args) {
+      for (int i = 0; i < numberOfThreads; i++) {
+         Thread t = new GeneratorThread(args);
+         t.start();
+      }
+   }
 }

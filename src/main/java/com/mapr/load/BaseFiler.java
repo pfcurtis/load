@@ -41,11 +41,11 @@ public class BaseFiler implements Filer {
     System.out.printf("%10.3f %5d %5d ", System.nanoTime() * 1e-9 - t0, latencySamples(Op.WRITE), latencySamples(Op.READ));
 
     if (latencySamples(Op.WRITE) > 100) {
-      System.out.printf("%.3f %.3f %.3f %.3f %.3f ",
-        meanBlocksPerSecond(Op.WRITE, t), quantiles(Op.WRITE, 2), quantiles(Op.WRITE, 3), quantiles(Op.WRITE, 4), quantiles(Op.WRITE, 5));
+      System.out.printf("%.3f %.3f %.3f %.3f %.3f %.3f ",
+        meanBlocksPerSecond(Op.WRITE, t), quantiles(Op.WRITE, 2), quantiles(Op.WRITE, 3), quantiles(Op.WRITE, 4), quantiles(Op.WRITE, 5), quantiles(Op.WRITE, 20));
       if (latencySamples(Op.READ) > 100) {
-        System.out.printf("%.3f %.3f %.3f %.3f %.3f\n",
-          meanBlocksPerSecond(Op.READ, t), quantiles(Op.READ, 2), quantiles(Op.READ, 3), quantiles(Op.READ, 4), quantiles(Op.READ, 5));
+        System.out.printf("%.3f %.3f %.3f %.3f %.3f %.3f\n",
+          meanBlocksPerSecond(Op.READ, t), quantiles(Op.READ, 2), quantiles(Op.READ, 3), quantiles(Op.READ, 4), quantiles(Op.READ, 5), quantiles(Op.READ, 20));
       } else {
         System.out.printf("\n");
       }
