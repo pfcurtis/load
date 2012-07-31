@@ -28,7 +28,7 @@ public class GeneratorThread extends Thread {
             actor.reset(actor.currentTime());
             System.out.println("Adding trace "+trace);
             g.addTrace(Generator.readTraceFile(new File(trace)));
-            g.generate(actor);
+            g.generate(0,999999L,1,actor);
          }
       } catch (Exception e) {
          return;

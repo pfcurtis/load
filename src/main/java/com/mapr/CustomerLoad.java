@@ -28,7 +28,7 @@ import java.io.IOException;
 
 public class CustomerLoad {
 
-   private static int numberOfThreads = 2;
+   private static int numberOfThreads = 1;
 
    public static void main(String[] args) {
       for (int i = 0; i < numberOfThreads; i++) {
