@@ -25,10 +25,11 @@ public class GeneratorThread extends Thread {
 
          final Filer actor = RandomFiler.create(file, 1000000, 1, 1);
          for (String trace : args) {
+            System.out.println("actor.currentTime(): " + actor.currentTime());
             actor.reset(actor.currentTime());
             System.out.println("Adding trace "+trace);
             g.addTrace(Generator.readTraceFile(new File(trace)));
-            g.generate(0,999999L,1,actor);
+            g.generate(0,250000,0.2,actor);
          }
       } catch (Exception e) {
          return;
