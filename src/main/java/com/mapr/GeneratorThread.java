@@ -1,40 +1,45 @@
 package com.mapr;
 
-import com.mapr.load.*;
+import com.mapr.load.Filer;
+import com.mapr.load.Generator;
+import com.mapr.load.RandomFiler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class GeneratorThread extends Thread {
-   private String[] args;
+public class GeneratorThread implements Callable<Filer> {
+    private static AtomicInteger idCounter = new AtomicInteger();
+    private final int id = idCounter.addAndGet(1);
 
-   public GeneratorThread(String[] a) {
-      this.args = a;
-   }
+    private Logger log = LoggerFactory.getLogger(GeneratorThread.class);
+    private String[] args;
 
-   public void run() {
-      File file = null;
+    public GeneratorThread(String[] a) {
+        this.args = a;
+    }
 
-      Generator g = new Generator();
-      g.setBlockSize(4096);
+    @Override
+    public Filer call() throws IOException, InterruptedException {
+        Generator g = new Generator();
+        g.setBlockSize(4096);
 
-      try {
-         String hostname = java.net.InetAddress.getLocalHost().getHostName();
-         file = new File(hostname + "-" + this.getId());
-         file.deleteOnExit();
+        String hostname = java.net.InetAddress.getLocalHost().getHostName();
+        File file = new File(hostname + "-" + id);
+        file.deleteOnExit();
 
-         final Filer actor = RandomFiler.create(file, 1000000, 1, 1);
-         for (String trace : args) {
+        final Filer actor = RandomFiler.create(file, 1000000, 1, 1);
+        for (String trace : args) {
             actor.reset(actor.currentTime());
-            System.out.println("Adding trace "+trace);
+            log.debug("Adding trace {}", trace);
             g.addTrace(Generator.readTraceFile(new File(trace)));
-            g.generate(0,999999L,1,actor);
-         }
-      } catch (Exception e) {
-         return;
-      }
-
-   }
+            g.generate(0, Double.MAX_VALUE, 1, actor);
+        }
+        return actor;
+    }
 }
 
 
