@@ -31,7 +31,7 @@ public class GeneratorThread implements Callable<Filer> {
         File file = new File(hostname + "-" + id);
         file.deleteOnExit();
 
-        final Filer actor = RandomFiler.create(file, 1000000, 1, 1);
+        final Filer actor = RandomFiler.create(file, 1000000, 0, 1);
         for (String trace : args) {
             actor.reset(actor.currentTime());
             log.debug("Adding trace {}", trace);
