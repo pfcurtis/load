@@ -36,7 +36,7 @@ public class GeneratorThread implements Callable<Filer> {
             actor.reset(actor.currentTime());
             log.debug("Adding trace {}", trace);
             g.addTrace(Generator.readTraceFile(new File(trace)));
-            g.generate(0, Double.MAX_VALUE, 1, actor);
+            g.generate(0, Double.MAX_VALUE, 0.2, actor);
         }
         return actor;
     }
